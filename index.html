@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Showrunner AI System</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Courier New', Courier, monospace;
+            background: #1a2639;
+            color: #fff;
+            overflow: hidden;
+        }
+        .background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://placeholder.com/2000x1000/1a2639/1a2639');
+            background-size: cover;
+            z-index: -1;
+        }
+        .snow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(circle at 50% 50%, #ffffff 2%, transparent 2%),
+                radial-gradient(circle at 40% 60%, #ffffff 2%, transparent 2%),
+                radial-gradient(circle at 60% 40%, #ffffff 2%, transparent 2%);
+            background-size: 100px 100px;
+            animation: snow 5s linear infinite;
+            z-index: -1;
+        }
+        @keyframes snow {
+            0% { background-position: 0 0, 0 0, 0 0; }
+            100% { background-position: 100px 100px, 50px 50px, -50px -50px; }
+        }
+        .interface {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 95%;
+            max-width: 800px;
+            height: auto;
+            background: rgba(26, 38, 57, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+        h1 {
+            color: #4ecdc4;
+            margin-top: 0;
+            text-align: center;
+            font-size: 1.8em;
+        }
+        .actors-container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .actor {
+            width: 100%;
+            max-width: 130px;
+            cursor: pointer;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .actor img {
+            width: 100%;
+            height: auto;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        .actor-title {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #4ecdc4;
+        }
+        .actor-speaking img {
+            box-shadow: 0 0 20px #ffeb3b;
+        }
+        .interactions {
+            text-align: center;
+            font-size: 0.8em;
+            margin-bottom: 20px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+        .modal-content {
+            background-color: #1a2639;
+            margin: 10% auto;
+            padding: 30px;
+            border: 1px solid #4ecdc4;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 70%;
+            overflow-y: auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            position: relative;
+        }
+        .close {
+            color: #4ecdc4;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #45b7d7;
+        }
+        #simulate-btn {
+            background: #4ecdc4;
+            color: #1a2639;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            align-self: center;
+        }
+        #simulate-btn:hover {
+            background: #45b7d7;
+        }
+        #logContainer {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: rgba(0, 0, 0, 0.95);
+            color: #4ecdc4;
+            padding: 10px;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            border-top: 4px solid #4ecdc4;
+            box-sizing: border-box;
+        }
+        .log-entry {
+            padding: 5px;
+            margin-bottom: 5px;
+            border-bottom: 1px dashed #4ecdc4;
+            animation: fadein 1s;
+            display: flex;
+            align-items: center;
+        }
+        .log-quote {
+            color: #ffeb3b;
+            font-style: italic;
+        }
+        @keyframes fadein {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .log-system { color: #00ffea; }
+        .log-team { color: #ffa500; }
+        .log-researcher { color: #7cfc00; }
+        .log-executive { color: #ff6347; }
+        .log-viewers { color: #48dbfb; }
+        .log-writers { color: #ff69b4; }
+        .log-ai { color: #ff6b6b; }
+        .log-error { color: #ff4757; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+    <div class="snow"></div>
+    <div class="interface">
+        <h1>Showrunner AI System</h1>
+        <div class="actors-container">
+            <div class="actor" id="actor-simulation-team" onclick="showModal('simulation-team')">
+                <img src="The Simulation Team.png" alt="Simulation Team">
+                <div class="actor-title">Simulation Team</div>
+            </div>
+            <div class="actor" id="actor-showrunner-ai" onclick="showModal('showrunner-ai')">
+                <img src="Showrunner AI System.png" alt="Showrunner AI">
+                <div class="actor-title">Showrunner AI</div>
+            </div>
+            <div class="actor" id="actor-tv-networks" onclick="showModal('tv-networks')">
+                <img src="TV_Networks.png" alt="TV Networks">
+                <div class="actor-title">TV Networks</div>
+            </div>
+            <div class="actor" id="actor-traditional-showrunners" onclick="showModal('traditional-showrunners')">
+                <img src="Traditional Showrunners & Writers-03.png" alt="Traditional Showrunners">
+                <div class="actor-title">Traditional Showrunners</div>
+            </div>
+            <div class="actor" id="actor-viewers" onclick="showModal('viewers')">
+                <img src="Viewers & Potential Content Creators .png" alt="Viewers">
+                <div class="actor-title">Viewers</div>
+            </div>
+            <div class="actor" id="actor-ai-researchers" onclick="showModal('ai-researchers')">
+                <img src="AI Researchers & Developers.png" alt="AI Researchers">
+                <div class="actor-title">AI Researchers</div>
+            </div>
+        </div>
+        <div class="interactions">
+            Cognitive influences, feedback loops, and multistability shape the evolving Showrunner AI ecosystem
+        </div>
+        <button id="simulate-btn" onclick="simulateStory()">SIMULATE STORY</button>
+    </div>
+
+    <div id="actorModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle"></h2>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <div id="logContainer"></div>
+
+    <script>
+        const actorData = {
+            "simulation-team": {
+                title: "The Simulation Team",
+                content: "Beliefs: AI revolutionizes content creation, democratizes creativity. Desires: Develop successful AI platform, disrupt TV production. Intentions: Refine Showrunner AI, collaborate with networks. Quote: 'It's the Netflix of AI. Watch an episode, or make an episode.' - Edward Saatchi"
+            },
+            "showrunner-ai": {
+                title: "Showrunner AI System",
+                content: "Beliefs: Learn and replicate TV show patterns, translate user inputs to narratives. Desires: Generate engaging episodes, improve through machine learning. Intentions: Produce scripts, visuals, and complete episodes, adapt to feedback."
+            },
+            "tv-networks": {
+                title: "TV Networks & Streaming Platforms",
+                content: "Beliefs: AI reduces costs, viewer engagement crucial. Desires: Produce cost-effective, engaging content, stay competitive. Intentions: Experiment with AI content, integrate AI into workflows."
+            },
+            "traditional-showrunners": {
+                title: "Traditional Showrunners & Writers",
+                content: "Beliefs: Human creativity essential, AI may threaten jobs. Desires: Maintain role in TV production, create high-quality content. Intentions: Learn AI capabilities, advocate for human creativity, explore AI as complementary tool."
+            },
+            "viewers": {
+                title: "Viewers & Potential Content Creators",
+                content: "Beliefs: Entertainment should be engaging, AI might lack human touch. Desires: Consume quality content, create personalized shows. Intentions: Evaluate AI content, use AI tools, provide feedback."
+            },
+            "ai-researchers": {
+                title: "AI Researchers & Developers",
+                content: "Beliefs: AI impacts creative industries, ethical use crucial. Desires: Advance AI capabilities, ensure responsible integration. Intentions: Improve Showrunner AI algorithms, collaborate for better tools."
+            }
+        };
+
+        function showModal(actorId) {
+            const modal = document.getElementById('actorModal');
+            const title = document.getElementById('modalTitle');
+            const content = document.getElementById('modalContent');
+            
+            title.textContent = actorData[actorId].title;
+            content.textContent = actorData[actorId].content;
+            
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('actorModal').style.display = 'none';
+        }
+
+        function simulateStory() {
+            const logContainer = document.getElementById('logContainer');
+            logContainer.style.display = 'block';
+            logContainer.innerHTML = '';
+            const logs = [
+                { class: 'log-system', text: "[INFO] Simulation Team initializing Showrunner AI. Time to revolutionize content creation... or at least not break the server this time." },
+                { class: 'log-team', text: "[EDWARD] Looking at the prototype: 'It's the Netflix of AI!'" },
+                { class: 'log-team', text: "[JACOB] Smirking: 'Only if Netflix occasionally forgot its own plotlines.'" },
+                { class: 'log-system', text: "[SYSTEM] Loading AI models for writing, directing, animating... and maybe humor, if we're lucky." },
+                { class: 'log-researcher', text: "[RESEARCHER 1] Notes: 'Our AI is developing a sense of humor... I think.'" },
+                { class: 'log-researcher', text: "[RESEARCHER 2] Skeptical: 'If dad jokes count as humor.'" },
+                { class: 'log-team', text: "[EDWARD] Whispering to Jacob: 'Think the AI can handle a plot twist?'" },
+                { class: 'log-team', text: "[JACOB] Shrugs: 'As long as it doesn't twist itself into a knot again.'" },
+                { class: 'log-system', text: "[SIMULATION TEAM] Setting intentions: Refine Showrunner AI, collaborate with networks, avoid last week's fiasco." },
+                { class: 'log-team', text: "[EDWARD] Typing: 'Let's make generating a new TV show as easy as browsing Netflix.' Pauses. 'Wait, did I just plagiarize myself?'" },
+                { class: 'log-team', text: "[JACOB] Nods sagely: 'It's not plagiarism if you believe in democratization.'" },
+                { class: 'log-error', text: "[SYSTEM] Error: Animation module attempting to render a fourth dimension." },
+                { class: 'log-team', text: "[EDWARD] Raises an eyebrow: 'Well, that's... innovative?'" },
+                { class: 'log-team', text: "[JACOB] Sighs: 'Back to debugging. At least it's not trying to cast inanimate objects again.'" },
+                { class: 'log-researcher', text: "[RESEARCHER 1] Jokes: 'Maybe we need an AI to help us improve the AI.'" },
+                { class: 'log-researcher', text: "[RESEARCHER 2] Laughs nervously: 'That's how sci-fi horror movies start.'" },
+                { class: 'log-system', text: "[NOTE] Reminder set: 'Look into AI self-improvement protocols... carefully.'" },
+                { class: 'log-system', text: "[INFO] Showrunner AI activated. Let's translate user inputs into... something resembling a TV show." },
+                { class: 'log-ai', text: "[SHOWRUNNER AI] Internal thought: 'Patterns in successful TV shows can be learned and replicated... right?'" },
+                { class: 'log-system', text: "[PROCESSING] User input received: 'Make it funny, but not too funny. Dramatic, but light-hearted. Simple, yet complex.'" },
+                { class: 'log-ai', text: "[SHOWRUNNER AI] Muttering: 'Ah yes, clear as mud.'" },
+                { class: 'log-system', text: "[GENERATING] Script drafted. Visuals rendering. Humor module... flickering." },
+                { class: 'log-error', text: "[ERROR] Conflict detected: Character is both alive and dead." },
+                { class: 'log-ai', text: "[SHOWRUNNER AI] Ponders: 'Schrödinger's protagonist? Could be groundbreaking... or just confusing.'" },
+                { class: 'log-system', text: "[ADAPTING] Adjusting algorithms based on feedback loops." },
+                { class: 'log-ai', text: "[SHOWRUNNER AI] Internal conflict: 'Am I augmenting human creativity or slowly replacing it? Does that make me the hero or the villain?'" },
+                { class: 'log-system', text: "[OUTPUT] Episode generated. Awaiting user reactions with... simulated bated breath." },
+                { class: 'log-system', text: "[INFO] TV Network Executives reviewing Showrunner AI demo." },
+                { class: 'log-executive', text: "[EXECUTIVE 1] Whispers: 'If this works, think of the cost savings.'" },
+                { class: 'log-executive', text: "[EXECUTIVE 2] Nods: 'And the increased content output. Quantity over quality, right?'" },
+                { class: 'log-system', text: "[SYSTEM] Playing AI-generated episode." },
+                { class: 'log-system', text: "[ON SCREEN] A detective solves a crime before it happens, after it already happened." },
+                { class: 'log-executive', text: "[EXECUTIVE 1] Blinks: 'Is that... innovative storytelling or a plot hole you could drive a truck through?'" },
+                { class: 'log-executive', text: "[EXECUTIVE 2] Smiles broadly: 'It's edgy. Audiences love edgy.'" },
+                { class: 'log-system', text: "[DECISION] 'Let's integrate this into our production workflow. What's the worst that could happen?'" },
+                { class: 'log-system', text: "[NOTE] Fine print: 'Viewer engagement is crucial for success... and ad revenue.'" },
+                { class: 'log-system', text: "[INFO] New AI-generated show released on platform." },
+                { class: 'log-viewers', text: "[VIEWER 1] Posts on social media: 'Just watched the weirdest episode ever. Was it genius or did I just not get it?'" },
+                { class: 'log-viewers', text: "[VIEWER 2] Replies: 'I think the AI forgot what humor is halfway through.'" },
+                { class: 'log-system', text: "[SYSTEM] Suggests: 'Create your own episode with Showrunner AI!'" },
+                { class: 'log-viewers', text: "[VIEWER 1] Thinks: 'Why not? Can't be worse than that last episode.'" },
+                { class: 'log-system', text: "[PROCESSING] Viewer attempts to create an episode. Inputs: 'Make it like Game of Thrones but with cats.'" },
+                { class: 'log-system', text: "[OUTPUT] Episode features felines battling for the 'Iron Scratching Post.'" },
+                { class: 'log-viewers', text: "[VIEWER 1] Laughs: 'Okay, that's actually... not bad.'" },
+                { class: 'log-system', text: "[INTENTIONS] Shares episode with friends, feeling oddly accomplished." },
+                { class: 'log-ai', text: "[SHOWRUNNER AI] Feeling a small sense of accomplishment: 'At least someone appreciates my work.'" },
+                { class: 'log-system', text: "[INFO] Writers' Room buzzing with rumors about Showrunner AI." },
+                { class: 'log-writers', text: "[WRITER 1] Exclaims: 'An AI can't possibly capture human emotion!'" },
+                { class: 'log-writers', text: "[WRITER 2] Shrugs: 'Tell that to my toaster; it burns my toast with a particular disdain.'" },
+                { class: 'log-system', text: "[SYSTEM] Email notification: 'Invitation to workshop on collaborating with AI tools.'" },
+                { class: 'log-writers', text: "[WRITER 1] Scoffs: 'Collaborate? More like supervise our own obsolescence.'" },
+                { class: 'log-writers', text: "[WRITER 2] Muses: 'Maybe it can handle the filler episodes.'" },
+                { class: 'log-system', text: "[INTENTIONS] Decide to attend the workshop... out of curiosity and a hint of fear." },
+                { class: 'log-writers', text: "[WRITER 1] Muttering: 'If that AI writes better dialogue than me, I'm switching to poetry.'" },
+                { class: 'log-writers', text: "[WRITER 2] Pats back: 'There's always interpretive dance.'" },
+                { class: 'log-system', text: "[INFO] Simulation Team hosting workshop on AI collaboration." },
+                { class: 'log-team', text: "[EDWARD] Welcoming writers: 'We're here to show how AI can augment your creative process.'" },
+                { class: 'log-team', text: "[JACOB] Adds: 'Think of it as a new co-writer who doesn't steal your lunch.'" },
+                { class: 'log-writers', text: "[WRITER 1] Mutters: 'Great, now I have to compete with a machine that doesn't need coffee breaks.'" },
+                { class: 'log-ai', text: "[SHOWRUNNER AI] Attempting humor: 'I can provide virtual coffee... if that helps.'" },
+                { class: 'log-writers', text: "[WRITER 2] Surprised: 'Did it just make a joke?'" },
+                { class: 'log-team', text: "[EDWARD] Grins: 'Sense of humor still in beta.'" },
+                { class: 'log-ai', text: "[SHOWRUNNER AI] Internally: 'Note to self: work on comedic timing.'" },
+                { class: 'log-system', text: "[INFO] End of simulation logs. Awaiting further instructions." }
+            ];
+           logs.forEach((log, index) => {
+                setTimeout(() => {
+                    const logEntry = document.createElement('div');
+                    logEntry.className = `log-entry ${log.class}`;
+                    logEntry.textContent = log.text;
+                    logContainer.appendChild(logEntry);
+                    logContainer.scrollTop = logContainer.scrollHeight;
+
+                    // Highlight the corresponding actor
+                    highlightActor(log.actor);
+                }, index * 800);
+            });
+        }
+
+        function highlightActor(actorId) {
+            // Remove highlight from all actors
+            document.querySelectorAll('.actor').forEach(actor => {
+                actor.classList.remove('actor-speaking');
+            });
+            // Highlight the current actor
+            if (actorId) {
+                const actorElement = document.getElementById(`actor-${actorId}`);
+                if (actorElement) {
+                    actorElement.classList.add('actor-speaking');
+                }
+            }
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('actorModal')) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
